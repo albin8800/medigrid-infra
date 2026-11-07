@@ -38,8 +38,10 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "medigrid-${var.environment}-public-subnet-${count.index + 1}"
-    Type = "Public"
+    Name                                                    = "medigrid-${var.environment}-public-subnet-${count.index + 1}"
+    Type                                                    = "Public"
+    "kubernetes.io/role/elb"                                = "1"
+    "kubernetes.io/cluster/medigrid-${var.environment}-eks" = "shared"
   }
 }
 
@@ -54,8 +56,10 @@ resource "aws_subnet" "private" {
   map_public_ip_on_launch = false
 
   tags = {
-    Name = "medigrid-${var.environment}-private-subnet-${count.index + 1}"
-    Type = "Private"
+    Name                                                    = "medigrid-${var.environment}-private-subnet-${count.index + 1}"
+    Type                                                    = "Private"
+    "kubernetes.io/role/internal-elb"                       = "1"
+    "kubernetes.io/cluster/medigrid-${var.environment}-eks" = "shared"
   }
 }
 
