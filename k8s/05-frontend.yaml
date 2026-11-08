@@ -9,14 +9,14 @@ metadata:
   labels:
     app: frontend
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
-    - port: 80
+    - port: 3000
       targetPort: 3000
       name: http
   selector:
     app: frontend
-    
+
 ---
 # ==============================================================================
 # 2. Frontend Deployment (Next.js 14 Standalone)
@@ -40,7 +40,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: 391425260319.dkr.ecr.ap-southeast-2.amazonaws.com/medigrid/frontend:v1
+          image: 391425260319.dkr.ecr.ap-southeast-2.amazonaws.com/medigrid/frontend:v3
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
