@@ -35,6 +35,8 @@ jobs:
 
       - name: Run Trivy IaC Security Scanner
         uses: aquasecurity/trivy-action@v0.36.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           scan-type: "config"
           scan-ref: "terraform"
