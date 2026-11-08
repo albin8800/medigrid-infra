@@ -1,0 +1,139 @@
+# ==============================================================================
+# 1. Pharmacy Service (Deployment & ClusterIP Service)
+# ==============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: pharmacy-service
+  namespace: medigrid
+  labels:
+    app: pharmacy-service
+spec:
+  ports:
+    - port: 5001
+      targetPort: 5001
+      name: http                                                                                                                                                                                                                      
+  selector:                                                                                                                                                                                                                           
+    app: pharmacy-service                                                                                                                                                                                                             
+                                                                                                                                                                                                                                      
+---                                                                                                                                                                                                                                   
+apiVersion: apps/v1                                                                                                                                                                                                                   
+kind: Deployment                                                                                                                                                                                                                      
+metadata:                                                                                                                                                                                                                             
+  name: pharmacy-service                                                                                                                                                                                                              
+  namespace: medigrid                                                                                                                                                                                                                 
+  labels:                                                                                                                                                                                                                             
+    app: pharmacy-service                                                                                                                                                                                                             
+spec:                                                                                                                                                                                                                                 
+  replicas: 2                                                                                                                                                                                                                         
+  selector:                                                                                                                                                                                                                           
+    matchLabels:                                                                                                                                                                                                                      
+      app: pharmacy-service                                                                                                                                                                                                           
+  template:                                                                                                                                                                                                                           
+    metadata:                                                                                                                                                                                                                         
+      labels:                                                                                                                                                                                                                         
+        app: pharmacy-service                                                                                                                                                                                                         
+    spec:                                                                                                                                                                                                                             
+      containers:                                                                                                                                                                                                                     
+        - name: pharmacy-service                                                                                                                                                                                                      
+          image: 391425260319.dkr.ecr.ap-southeast-2.amazonaws.com/medigrid/pharmacy-service:v1                                                                                                                                       
+          imagePullPolicy: IfNotPresent                                                                                                                                                                                               
+          ports:                                                                                                                                                                                                                      
+            - containerPort: 5001                                                                                                                                                                                                     
+              name: http                                                                                                                                                                                                              
+          envFrom:                                                                                                                                                                                                                    
+            - configMapRef:                                                                                                                                                                                                           
+                name: medigrid-config                                                                                                                                                                                                 
+            - secretRef:                                                                                                                                                                                                              
+                name: medigrid-secrets                                                                                                                                                                                                
+          resources:                                                                                                                                                                                                                  
+            requests:                                                                                                                                                                                                                 
+              memory: "100Mi"                                                                                                                                                                                                         
+              cpu: "50m"                                                                                                                                                                                                              
+            limits:                                                                                                                                                                                                                   
+              memory: "250Mi"                                                                                                                                                                                                         
+              cpu: "200m"                                                                                                                                                                                                             
+          livenessProbe:                                                                                                                                                                                                              
+            httpGet:                                                                                                                                                                                                                  
+              path: /healthz                                                                                                                                                                                                          
+              port: 5001                                                                                                                                                                                                              
+            initialDelaySeconds: 10                                                                                                                                                                                                   
+            periodSeconds: 10                                                                                                                                                                                                         
+          readinessProbe:                                                                                                                                                                                                             
+            httpGet:                                                                                                                                                                                                                  
+              path: /ready                                                                                                                                                                                                            
+              port: 5001                                                                                                                                                                                                              
+            initialDelaySeconds: 5                                                                                                                                                                                                    
+            periodSeconds: 5                                                                                                                                                                                                          
+                                                                                                                                                                                                                                      
+---                                                                                                                                                                                                                                   
+# ==============================================================================                                                                                                                                                      
+# 2. Order Service (Deployment & ClusterIP Service)                                                                                                                                                                                   
+# ==============================================================================                                                                                                                                                      
+apiVersion: v1                                                                                                                                                                                                                        
+kind: Service                                                                                                                                                                                                                         
+metadata:                                                                                                                                                                                                                             
+  name: order-service                                                                                                                                                                                                                 
+  namespace: medigrid                                                                                                                                                                                                                 
+  labels:                                                                                                                                                                                                                             
+    app: order-service                                                                                                                                                                                                                
+spec:                                                                                                                                                                                                                                 
+  ports:                                                                                                                                                                                                                              
+    - port: 5002                                                                                                                                                                                                                      
+      targetPort: 5002                                                                                                                                                                                                                
+      name: http                                                                                                                                                                                                                      
+  selector:                                                                                                                                                                                                                           
+    app: order-service                                                                                                                                                                                                                
+                                                                                                                                                                                                                                      
+---                                                                                                                                                                                                                                   
+apiVersion: apps/v1                                                                                                                                                                                                                   
+kind: Deployment                                                                                                                                                                                                                      
+metadata:                                                                                                                                                                                                                             
+  name: order-service                                                                                                                                                                                                                 
+  namespace: medigrid                                                                                                                                                                                                                 
+  labels:                                                                                                                                                                                                                             
+    app: order-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      containers:
+        - name: order-service
+          image: 391425260319.dkr.ecr.ap-southeast-2.amazonaws.com/medigrid/order-service:v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5002
+              name: http
+          env:
+          - name: PORT
+            value: "5002"
+          envFrom:
+            - configMapRef:
+                name: medigrid-config
+            - secretRef:
+                name: medigrid-secrets
+          resources:
+            requests:
+              memory: "100Mi"
+              cpu: "50m"
+            limits:
+              memory: "250Mi"
+              cpu: "200m"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 5002
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 5002
+            initialDelaySeconds: 5
+            periodSeconds: 5
