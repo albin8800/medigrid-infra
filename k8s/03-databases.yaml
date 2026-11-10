@@ -1,0 +1,150 @@
+# ==============================================================================
+# 1. PostgreSQL Service (Internal Cluster Switchboard)
+# ==============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: medigrid
+  labels:
+    app: postgres
+spec:
+  ports:
+    - port: 5432
+      targetPort: 5432
+      name: postgres
+  selector:
+    app: postgres
+    
+---
+# ==============================================================================
+# 2. PostgreSQL Deployment (The Container Engine)
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: medigrid
+  labels:
+    app: postgres
+spec:                                                                                                                                                                                                                                 
+  replicas: 1                                                                                                                                                                                                                         
+  selector:                                                                                                                                                                                                                           
+    matchLabels:                                                                                                                                                                                                                      
+      app: postgres                                                                                                                                                                                                                   
+  template:                                                                                                                                                                                                                           
+    metadata:                                                                                                                                                                                                                         
+      labels:                                                                                                                                                                                                                         
+        app: postgres                                                                                                                                                                                                                 
+    spec:                                                                                                                                                                                                                             
+      containers:                                                                                                                                                                                                                     
+        - name: postgres                                                                                                                                                                                                              
+          image: postgres:16-alpine                                                                                                                                                                                                   
+          ports:                                                                                                                                                                                                                      
+            - containerPort: 5432                                                                                                                                                                                                     
+              name: postgres                                                                                                                                                                                                          
+          env:                                                                                                                                                                                                                        
+            - name: POSTGRES_USER                                                                                                                                                                                                     
+              valueFrom:                                                                                                                                                                                                              
+                secretKeyRef:                                                                                                                                                                                                         
+                  name: medigrid-secrets                                                                                                                                                                                              
+                  key: POSTGRES_USER                                                                                                                                                                                                  
+            - name: POSTGRES_PASSWORD                                                                                                                                                                                                 
+              valueFrom:                                                                                                                                                                                                              
+                secretKeyRef:                                                                                                                                                                                                         
+                  name: medigrid-secrets                                                                                                                                                                                              
+                  key: POSTGRES_PASSWORD                                                                                                                                                                                              
+            - name: POSTGRES_DB                                                                                                                                                                                                       
+              valueFrom:                                                                                                                                                                                                              
+                secretKeyRef:                                                                                                                                                                                                         
+                  name: medigrid-secrets                                                                                                                                                                                              
+                  key: POSTGRES_DB                                                                                                                                                                                                    
+          resources:                                                                                                                                                                                                                  
+            requests:                                                                                                                                                                                                                 
+              memory: "128Mi"                                                                                                                                                                                                         
+              cpu: "100m"                                                                                                                                                                                                             
+            limits:                                                                                                                                                                                                                   
+              memory: "256Mi"                                                                                                                                                                                                         
+              cpu: "250m"                                                                                                                                                                                                             
+          volumeMounts:                                                                                                                                                                                                               
+            - name: init-script                                                                                                                                                                                                       
+              mountPath: /docker-entrypoint-initdb.d/init.sql                                                                                                                                                                         
+              subPath: init.sql                                                                                                                                                                                                       
+          livenessProbe:                                                                                                                                                                                                              
+            exec:                                                                                                                                                                                                                     
+              command: ["pg_isready", "-U", "medigrid", "-d", "medigrid_db"]                                                                                                                                                          
+            initialDelaySeconds: 15                                                                                                                                                                                                   
+            periodSeconds: 10                                                                                                                                                                                                         
+          readinessProbe:                                                                                                                                                                                                             
+            exec:                                                                                                                                                                                                                     
+              command: ["pg_isready", "-U", "medigrid", "-d", "medigrid_db"]                                                                                                                                                          
+            initialDelaySeconds: 5                                                                                                                                                                                                    
+            periodSeconds: 5                                                                                                                                                                                                          
+      volumes:                                                                                                                                                                                                                        
+        - name: init-script                                                                                                                                                                                                           
+          configMap:                                                                                                                                                                                                                  
+            name: postgres-init-script                                                                                                                                                                                                
+                                                                                                                                                                                                                                      
+---                                                                                                                                                                                                                                   
+# ==============================================================================                                                                                                                                                      
+# 3. Redis Service (Internal Cluster Switchboard)                                                                                                                                                                                     
+# ==============================================================================                                                                                                                                                      
+apiVersion: v1                                                                                                                                                                                                                        
+kind: Service                                                                                                                                                                                                                         
+metadata:                                                                                                                                                                                                                             
+  name: redis                                                                                                                                                                                                                         
+  namespace: medigrid                                                                                                                                                                                                                 
+  labels:                                                                                                                                                                                                                             
+    app: redis                                                                                                                                                                                                                        
+spec:                                                                                                                                                                                                                                 
+  ports:                                                                                                                                                                                                                              
+    - port: 6379                                                                                                                                                                                                                      
+      targetPort: 6379                                                                                                                                                                                                                
+      name: redis                                                                                                                                                                                                                     
+  selector:                                                                                                                                                                                                                           
+    app: redis                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                      
+---                                                                                                                                                                                                                                   
+# ==============================================================================                                                                                                                                                      
+# 4. Redis Deployment (In-Memory Cache & Token Store)                                                                                                                                                                                 
+# ==============================================================================                                                                                                                                                      
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: medigrid
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379
+              name: redis
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+          livenessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 5

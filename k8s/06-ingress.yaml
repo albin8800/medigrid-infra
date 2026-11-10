@@ -1,0 +1,91 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: medigrid-ingress
+  namespace: medigrid
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          # 1. Route all Pharmacy, Medicine, and Auth APIs to pharmacy-service
+          - path: /api/v1/auth
+            pathType: Prefix
+            backend:
+              service:
+                name: pharmacy-service
+                port:
+                  number: 5001
+
+          - path: /api/v1/pharmacies
+            pathType: Prefix
+            backend:
+              service:
+                name: pharmacy-service
+                port:
+                  number: 5001
+
+          - path: /api/v1/medicines
+            pathType: Prefix
+            backend:
+              service:
+                name: pharmacy-service
+                port:
+                  number: 5001
+
+          - path: /api/v1/admin/stores
+            pathType: Prefix
+            backend:
+              service:
+                name: pharmacy-service
+                port:
+                  number: 5001
+
+          - path: /api/v1/public
+            pathType: Prefix
+            backend:
+              service:
+                name: pharmacy-service
+                port:
+                  number: 5001
+
+          # 2. Route all Orders and Billing APIs to order-service
+          - path: /api/v1/orders
+            pathType: Prefix
+            backend:
+              service:
+                name: order-service
+                port:
+                  number: 5002
+
+          - path: /api/v1/bills
+            pathType: Prefix
+            backend:
+              service:
+                name: order-service
+                port:
+                  number: 5002
+
+          # Route Admin Analytics to order-service
+          - path: /api/v1/admin/analytics
+            pathType: Prefix
+            backend:
+              service:
+                name: order-service
+                port:
+                  number: 5002
+
+          # 3. Route everything else (HTML, React, CSS, Home) to Next.js Frontend
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-lb
+                port:
+                  number: 3000
+          
+
+

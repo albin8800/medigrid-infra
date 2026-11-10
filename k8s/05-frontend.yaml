@@ -1,0 +1,71 @@
+# ==============================================================================
+# 1. Frontend Public Load Balancer Service (AWS ELB)                                                                                                                                                                                  
+# ==============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-lb
+  namespace: medigrid
+  labels:
+    app: frontend
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3000
+      targetPort: 3000
+      name: http
+  selector:
+    app: frontend
+
+---
+# ==============================================================================
+# 2. Frontend Deployment (Next.js 14 Standalone)
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: medigrid
+  labels:
+    app: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:                                                                                                                                                                                                                      
+      app: frontend                                                                                                                                                                                                                   
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: 391425260319.dkr.ecr.ap-southeast-2.amazonaws.com/medigrid/frontend:v4
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              name: http
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "3000"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "350Mi"
+              cpu: "250m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /                                                                                                                                                                                                                 
+              port: 3000                                                                                                                                                                                                              
+            initialDelaySeconds: 5                                                                                                                                                                                                    
+            periodSeconds: 5
